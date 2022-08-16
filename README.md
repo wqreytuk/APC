@@ -2,7 +2,7 @@
 
 我这边只是读代码的时候加个注释，权当笔记了
 
-
+一些关于APC的乱七八糟的东西可能会记录在这里: https://blog.csdn.net/ma_de_hao_mei_le/article/details/126367996?spm=1001.2014.3001.5501
 
 # APC Internals Research Code
 
