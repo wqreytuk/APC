@@ -16,7 +16,7 @@ InitializeApcLib(
 	VOID
 )
 {
-	// ???????GetModuleHandleA??????
+	// let's see what is GetModuleHandleA doing
 	// according to the doc, the module must be already loaded
 	// well, I didn't notice where are these modules loaded
 	// the handle retrived here is then used in GetProcAddress function
@@ -32,6 +32,20 @@ InitializeApcLib(
 		return;
 	}
 
+	// so PNT_GET_NEXT_THREAD is a self defined function typedef
+	// I don't know why we have to convert the retrived function
+	// so this function NtGetNextThread is undocumented, we need to convert it 
+	// so it can be used by us, the parameter and return value is discovered 
+	// by reverse enginnering, thes guys are really good
+	// I have no idea how they discovered these undocumented functions
+	// this function's assembly code can be viewed with windbg
+	// I ask a question in my qq group: https://img-blog.csdnimg.cn/76a0fa3a476d4fbfa551cc17fd4ad3a6.png
+	// now I know where to look, https://github.com/processhacker/phnt
+	// thie repository contains almost all of the undocumented APIs
+	// in case someday this repository is deleted, I archived this repository as 
+	// an 7z file an upload it here: https://github.com/wqreytuk/phnt/blob/main/phnt-master_2.7z
+	// the password is: 1
+	// so yes, I can find this function here: https://img-blog.csdnimg.cn/9811de369f73486f92023f624eace44f.png 
 	NtGetNextThread = (PNT_GET_NEXT_THREAD)GetProcAddress(NtdllHandle, "NtGetNextThread");
 	NtQueueApcThread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "NtQueueApcThread");
 	RtlQueueApcWow64Thread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "RtlQueueApcWow64Thread");
