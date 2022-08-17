@@ -57,6 +57,12 @@ NTSTATUS
 	);
 
 
+// this function signature is simply taken from doc
+/*
+HMODULE LoadLibraryA(
+  [in] LPCSTR lpLibFileName
+);
+*/
 typedef 
 HMODULE
 (NTAPI* PLOAD_LIBRARY_A)(

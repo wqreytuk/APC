@@ -3,6 +3,13 @@
 #include <winternl.h>
 #include <ApcLib/ApcLib.h>
 
+BOOL FileExists(LPCTSTR szPath)
+{
+	DWORD dwAttrib = GetFileAttributes(szPath);
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
 
 typedef enum _APC_TYPE {
 	ApcTypeWin32,
@@ -23,21 +30,28 @@ ParseArguments(
 	__in const char** Arguments,
 	__out PAPC_INJECTOR_ARGS Args)
 {
+	// so we need submit 3 cmdline params at least
+	// the fourth is optional
 	if (ArgumentCount < 4) {
 		printf("Missing arguments!\n");
 		printf("ApcDllInjector.exe <native/win32/special> <process_id> <dll_path> [thread_id]\n");
 		exit(-1);
 	}
 
+	// atoi means string to int
 	Args->ProcessId = atoi(Arguments[2]);
 	Args->DllPath = Arguments[3];
 	Args->ThreadId = 0;
+	// so this is the default apc type
+	// I guess win32 means user mode
 	Args->ApcType = ApcTypeWin32;
 
+	// here comes the thread id
 	if (ArgumentCount > 4) {
 		Args->ThreadId = atoi(Arguments[4]);
 	}
 
+	// check apc type
 	if (strcmp(Arguments[1], "native") == 0) {
 		Args->ApcType = ApcTypeNative;
 	}
@@ -53,7 +67,7 @@ ParseArguments(
 	}
 }
 
-// 这他妈怎么是用户模式下的APC？
+// this project should be a user mode APC usage
 int main(int argc, const char** argv) {
 
 	APC_INJECTOR_ARGS Args;
@@ -62,25 +76,46 @@ int main(int argc, const char** argv) {
 	HANDLE ProcessHandle;
 	PVOID RemoteLibraryAddress;
 
+	// a couple of undocumented functions is generated in this function
 	InitializeApcLib();
 
+	// take care of arguments from cmdline
+	// the third param should be an out param, the first two params is taken from main function
 	ParseArguments(argc, argv, &Args);
 
+	// self-defined function in apclib.c
+	// first two params in, last two params out
 	OpenTargetHandles(
 			Args.ProcessId,
-			Args.ThreadId,
+			Args.ThreadId,		// optional
 			&ProcessHandle,
 			&ThreadHandle
 		);
 
+	// self-defined function in apclib.c
+	// return value is an address of memory allocated in target process
 	RemoteLibraryAddress = WriteLibraryNameToRemote(ProcessHandle, Args.DllPath);
 
 
 	switch (Args.ApcType) {
 	case ApcTypeWin32: {
-		if (!QueueUserAPC((PAPCFUNC)LoadLibraryAPtr, ThreadHandle, (ULONG_PTR)RemoteLibraryAddress)) {
-			printf("QueueUserAPC Error! 0x%08X\n", GetLastError());
-			exit(-1);
+		// from doc: Adds a user-mode asynchronous procedure call (APC) object to the APC queue of the specified thread
+		while (1) {
+			if (FileExists(TEXT("C:\\1.txt"))) {
+				if (FileExists(TEXT("C:\\1.txt")))
+					if (!QueueUserAPC((PAPCFUNC)LoadLibraryAPtr, ThreadHandle,
+						(ULONG_PTR)RemoteLibraryAddress) // this is the param to LoadLibraryAPtr(function)
+						// I guess this is why we have to write this dll path to the memory of target process
+						// because APC is associated with thread, and thread is in process, so 
+						// APC can only access memory in this process memory region
+						// this seems to be the only way to pass dll path to APC
+						) {
+						printf("QueueUserAPC Error! 0x%08X\n", GetLastError());
+						exit(-1);
+					}
+				break;
+			}
+			Sleep(500);
 		}
 	}
 					   break;

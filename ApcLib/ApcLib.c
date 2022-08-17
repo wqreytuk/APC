@@ -46,28 +46,37 @@ InitializeApcLib(
 	// an 7z file an upload it here: https://github.com/wqreytuk/phnt/blob/main/phnt-master_2.7z
 	// the password is: 1
 	// so yes, I can find this function here: https://img-blog.csdnimg.cn/9811de369f73486f92023f624eace44f.png 
+	// so this is what InitializeApcLib does, he generate a few undocumented functions for us
 	NtGetNextThread = (PNT_GET_NEXT_THREAD)GetProcAddress(NtdllHandle, "NtGetNextThread");
 	NtQueueApcThread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "NtQueueApcThread");
 	RtlQueueApcWow64Thread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "RtlQueueApcWow64Thread");
 	NtQueueApcThreadEx = (PNT_QUEUE_APC_THREAD_EX)GetProcAddress(NtdllHandle, "NtQueueApcThreadEx");
 	LdrLoadDllPtr = (PLDR_LOAD_DLL)GetProcAddress(NtdllHandle, "LdrLoadDll");
+	// as far as I know, LoadLibraryA is a documented function, I have no idea why 
+	// we have to get it with GetProcAddress, I'll try it without using GetProcAddress
+	// oh I see, this function is passed to QueueUserAPC as an APC, so we need to 
+	// get this function's address and make some convertion
 	LoadLibraryAPtr = (PLOAD_LIBRARY_A)GetProcAddress(Kernel32Handle, "LoadLibraryA");
 }
 
 PVOID 
 WriteLibraryNameToRemote(
 	HANDLE ProcessHandle,
-	PCSTR Library
+	PCSTR Library			// dll path
 	)
 {
 	SIZE_T LibraryLength = strlen(Library);
 
+	// from doc: Reserves, commits, or changes the state of a region of memory within the virtual address space of a specified process. The function initializes the memory it allocates to zero
 	PVOID LibraryRemoteAddress = VirtualAllocEx(
 		ProcessHandle,
-		NULL,
-		LibraryLength + 1,
-		MEM_RESERVE | MEM_COMMIT,
-		PAGE_READWRITE
+		NULL,			// opt, specify start address of the virtual memory region you want to allocate
+		LibraryLength + 1,	// allocated memory size, so what is the meaning of writing a 
+							// DLL path to this process?
+		MEM_RESERVE | MEM_COMMIT,		// reserve and commit memory, reserve means no memory allocated, just reserved for us for future use
+		// commit means allocate memory for the reserved memory region, but the actual 
+		// physical memory is allocated until the virtual memory is accessed				
+		PAGE_READWRITE			// memory protection
 	);
 
 	if (!LibraryRemoteAddress) {
@@ -75,6 +84,8 @@ WriteLibraryNameToRemote(
 		exit(-1);
 	}
 
+	// from doc: Writes data to an area of memory in a specified process. The entire area to be written to must be accessible or the operation fails
+	// so we write out specified dll path to the target process
 	if (!WriteProcessMemory(
 		ProcessHandle,
 		LibraryRemoteAddress,
@@ -100,22 +111,28 @@ OpenTargetHandles(
 {
 	NTSTATUS Status;
 
+	// from doc: Opens an existing local process object
 	*ProcessHandle = OpenProcess(
 		PROCESS_QUERY_INFORMATION |
 		PROCESS_VM_OPERATION |
 		PROCESS_VM_READ |
-		PROCESS_VM_WRITE,
-		FALSE,
+		PROCESS_VM_WRITE,		// see https://docs.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights
+		FALSE,			// bInheritHandle
 		ProcessId
 	);
 
+	// good habit, check ret value
 	if (!*ProcessHandle) {
 		printf("Cannot open process handle: 0x%08X\n", GetLastError());
 		exit(-1);
 	}
 
+	// check if optional param exists
 	if (ThreadId) {
-		*ThreadHandle = OpenThread(THREAD_SET_CONTEXT, FALSE, ThreadId);
+		// from doc: Opens an existing thread object
+		*ThreadHandle = OpenThread(THREAD_SET_CONTEXT, // see https://docs.microsoft.com/en-us/windows/win32/procthread/thread-security-and-access-rights
+			FALSE,		// bInheritHandle
+			ThreadId);
 
 		if (!*ThreadHandle) {
 			printf("Cannt open thread handle 0x%08X\n", GetLastError());
@@ -123,6 +140,8 @@ OpenTargetHandles(
 		}
 	}
 	else {
+		// this uncodumented function will retrive the first thread in specified process
+		// ignore this function, it makes no sense
 		Status = NtGetNextThread(
 			*ProcessHandle,
 			NULL,
