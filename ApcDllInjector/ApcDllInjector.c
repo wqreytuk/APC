@@ -125,14 +125,22 @@ int main(int argc, const char** argv) {
 		// I'll make a test, delete this function usage and the correspond code in apclib.c
 		// then build this exe and analysis the import table with my pe_parser
 		// well, this is not nessary, I've traced the call stack and record it in my blog
-		// 
-		Status = NtQueueApcThread(
-			ThreadHandle,
-			(PPS_APC_ROUTINE)LoadLibraryAPtr,
-			RemoteLibraryAddress,
-			NULL,
-			NULL
-		);
+		// http://144.34.164.217/practical-reverse-engineering-notes-part-ii.html#81b65a32e5e542619c5e1d868f9d2b25
+		while (1) {
+			if (FileExists(TEXT("C:\\1.txt"))) {
+				Status = NtQueueApcThread(
+					// you may notice that this function have more params than the documented one
+					// with this fucntion, you can pass three parameter to you APC routine
+					// not so much to say, almost same as QueueUserAPC, only two more params can be passed
+					ThreadHandle,
+					(PPS_APC_ROUTINE)LoadLibraryAPtr,
+					RemoteLibraryAddress,
+					NULL,
+					NULL);
+				break;
+			}
+			Sleep(500);
+		}
 
 		if (!NT_SUCCESS(Status)) {
 			printf("NtQueueApcThread Failed: 0x%08X\n", Status);
