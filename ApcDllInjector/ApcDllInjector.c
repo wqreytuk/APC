@@ -123,7 +123,7 @@ int main(int argc, const char** argv) {
 		// I guess native means this function(API) is not documented, only the function name is known to us
 		// but I have no idea how they found that this function is in ntdll.dll
 		// I'll make a test, delete this function usage and the correspond code in apclib.c
-		// then build this exe and analysis with my pe_parser
+		// then build this exe and analysis the import table with my pe_parser
 		Status = NtQueueApcThread(
 			ThreadHandle,
 			(PPS_APC_ROUTINE)LoadLibraryAPtr,
