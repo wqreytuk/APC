@@ -124,6 +124,8 @@ int main(int argc, const char** argv) {
 		// but I have no idea how they found that this function is in ntdll.dll
 		// I'll make a test, delete this function usage and the correspond code in apclib.c
 		// then build this exe and analysis the import table with my pe_parser
+		// well, this is not nessary, I've traced the call stack and record it in my blog
+		// 
 		Status = NtQueueApcThread(
 			ThreadHandle,
 			(PPS_APC_ROUTINE)LoadLibraryAPtr,
