@@ -132,6 +132,9 @@ int main(int argc, const char** argv) {
 					// you may notice that this function have more params than the documented one
 					// with this fucntion, you can pass three parameter to you APC routine
 					// not so much to say, almost same as QueueUserAPC, only two more params can be passed
+					// emmm, seems like something is run, APC is inserted, but the data there is not
+					// quiet right
+					// I'll continue dig this function when I got home
 					ThreadHandle,
 					(PPS_APC_ROUTINE)LoadLibraryAPtr,
 					RemoteLibraryAddress,
