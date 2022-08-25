@@ -126,6 +126,9 @@ int main(int argc, const char** argv) {
 		// then build this exe and analysis the import table with my pe_parser
 		// well, this is not nessary, I've traced the call stack and record it in my blog
 		// http://144.34.164.217/practical-reverse-engineering-notes-part-ii.html#81b65a32e5e542619c5e1d868f9d2b25
+		// let's make a char array to check if the fifth parameter is pass through stack
+		char stack_param_tester[520] = "woaiouye";
+		printf("here is the address of stack_param_tester: %p\n", stack_param_tester);
 		while (1) {
 			if (FileExists(TEXT("C:\\1.txt"))) {
 				Status = NtQueueApcThread(
@@ -139,7 +142,7 @@ int main(int argc, const char** argv) {
 					(PPS_APC_ROUTINE)LoadLibraryAPtr,
 					RemoteLibraryAddress,
 					NULL,
-					NULL);
+					stack_param_tester);
 				break;
 			}
 			Sleep(500);
