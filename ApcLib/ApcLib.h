@@ -13,8 +13,10 @@ typedef
 NTSTATUS
 (NTAPI* PNT_QUEUE_APC_THREAD)(
 	HANDLE ThreadHandle,
-	PPS_APC_ROUTINE ApcRoutine,
-	PVOID SystemArgument1,
+	// PPS_APC_ROUTINE ApcRoutine,
+	void* ptr,
+	//PVOID SystemArgument1,
+	_In_ PAPCFUNC pfnAPC,
 	PVOID SystemArgument2,
 	PVOID SystemArgument3
 	);
@@ -88,6 +90,7 @@ extern PNT_QUEUE_APC_THREAD_EX NtQueueApcThreadEx;
 extern PLOAD_LIBRARY_A LoadLibraryAPtr;
 extern PLDR_LOAD_DLL LdrLoadDllPtr;
 extern PNT_QUEUE_APC_THREAD RtlQueueApcWow64Thread;
+extern ULONG_PTR addr_RtlDispatchAPC;
 
 VOID
 InitializeApcLib(

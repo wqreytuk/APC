@@ -139,10 +139,10 @@ int main(int argc, const char** argv) {
 					// quiet right
 					// I'll continue dig this function when I got home
 					ThreadHandle,
+					(void*)addr_RtlDispatchAPC,
 					(PPS_APC_ROUTINE)LoadLibraryAPtr,
 					RemoteLibraryAddress,
-					NULL,
-					stack_param_tester);
+					NULL);
 				break;
 			}
 			Sleep(500);

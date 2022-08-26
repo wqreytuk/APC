@@ -10,6 +10,7 @@ PNT_QUEUE_APC_THREAD RtlQueueApcWow64Thread;
 PNT_QUEUE_APC_THREAD_EX NtQueueApcThreadEx;
 PLOAD_LIBRARY_A LoadLibraryAPtr;
 PLDR_LOAD_DLL LdrLoadDllPtr;
+ULONG_PTR addr_RtlDispatchAPC;
 
 VOID
 InitializeApcLib(
@@ -31,7 +32,7 @@ InitializeApcLib(
 		printf("GetModuleHandleA failed!\n");
 		return;
 	}
-
+	printf("this is the base address of ntdll.dll: \t%p\n", (void*)NtdllHandle);
 	// so PNT_GET_NEXT_THREAD is a self defined function typedef
 	// I don't know why we have to convert the retrived function
 	// so this function NtGetNextThread is undocumented, we need to convert it 
@@ -51,7 +52,13 @@ InitializeApcLib(
 	NtQueueApcThread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "NtQueueApcThread");
 	RtlQueueApcWow64Thread = (PNT_QUEUE_APC_THREAD)GetProcAddress(NtdllHandle, "RtlQueueApcWow64Thread");
 	NtQueueApcThreadEx = (PNT_QUEUE_APC_THREAD_EX)GetProcAddress(NtdllHandle, "NtQueueApcThreadEx");
+	printf("this is the address of ntdll!NtQueueApcThreadEx: \t%p\n", NtQueueApcThreadEx);
 	LdrLoadDllPtr = (PLDR_LOAD_DLL)GetProcAddress(NtdllHandle, "LdrLoadDll");
+	// 获取ntdll!RtlDispatchAPC函数的地址，用于作为NtQueueApcThread的第二个参数
+	// 由于该函数并非导出函数，因此不能直接使用GetProcAddress，只能通过偏移量进行计算
+	// 这个偏移量只针对win8 6.2 9200 x64版本
+	addr_RtlDispatchAPC = (ULONG_PTR)(void*)NtdllHandle + 0x65E04;
+	printf("this is the address of ntdll!RtlDispatchAPC: \t%p\n", (void*)addr_RtlDispatchAPC);
 	// as far as I know, LoadLibraryA is a documented function, I have no idea why 
 	// we have to get it with GetProcAddress, I'll try it without using GetProcAddress
 	// oh I see, this function is passed to QueueUserAPC as an APC, so we need to 
