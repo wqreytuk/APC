@@ -75,6 +75,7 @@ int main(int argc, const char** argv) {
 	HANDLE ThreadHandle;
 	HANDLE ProcessHandle;
 	PVOID RemoteLibraryAddress;
+	PVOID stack_param_tester;
 
 	// a couple of undocumented functions is generated in this function
 	InitializeApcLib();
@@ -95,7 +96,7 @@ int main(int argc, const char** argv) {
 	// self-defined function in apclib.c
 	// return value is an address of memory allocated in target process
 	RemoteLibraryAddress = WriteLibraryNameToRemote(ProcessHandle, Args.DllPath);
-
+	stack_param_tester = WriteLibraryNameToRemote(ProcessHandle, TEXT("woaiouye"));
 
 	switch (Args.ApcType) {
 	case ApcTypeWin32: {
@@ -127,7 +128,6 @@ int main(int argc, const char** argv) {
 		// well, this is not nessary, I've traced the call stack and record it in my blog
 		// http://144.34.164.217/practical-reverse-engineering-notes-part-ii.html#81b65a32e5e542619c5e1d868f9d2b25
 		// let's make a char array to check if the fifth parameter is pass through stack
-		char stack_param_tester[520] = "woaiouye";
 		printf("here is the address of stack_param_tester: %p\n", stack_param_tester);
 		while (1) {
 			if (FileExists(TEXT("C:\\1.txt"))) {
@@ -142,7 +142,7 @@ int main(int argc, const char** argv) {
 					(void*)addr_RtlDispatchAPC,
 					(PPS_APC_ROUTINE)LoadLibraryAPtr,
 					RemoteLibraryAddress,
-					NULL);
+					stack_param_tester);
 				break;
 			}
 			Sleep(500);
